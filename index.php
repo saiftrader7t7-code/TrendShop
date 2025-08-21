@@ -1,76 +1,102 @@
-<?php 
-$page_title = "Home";
-include 'common/header.php'; 
+<?php
+// admin/index.php
 
-// Fetch categories
-$categories_result = $conn->query("SELECT * FROM categories ORDER BY name ASC LIMIT 8");
+// Step 1: Include the central authentication file at the very top.
+require_once 'common/auth.php';
 
-// Fetch featured products
-$products_result = $conn->query("SELECT * FROM products ORDER BY created_at DESC LIMIT 8");
+// Step 2: Set the page title and include the header.
+$admin_page_title = 'Dashboard';
+include 'common/header.php';
+
+// Step 3: Fetch ALL statistics from the database for the dashboard cards.
+$total_users = $conn->query("SELECT COUNT(id) as count FROM users")->fetch_assoc()['count'];
+$total_orders = $conn->query("SELECT COUNT(id) as count FROM orders")->fetch_assoc()['count'];
+$total_revenue = $conn->query("SELECT SUM(total_amount) as sum FROM orders WHERE status = 'Delivered'")->fetch_assoc()['sum'];
+$active_products = $conn->query("SELECT COUNT(id) as count FROM products WHERE stock > 0")->fetch_assoc()['count'];
+$pending_orders = $conn->query("SELECT COUNT(id) as count FROM orders WHERE status = 'Placed'")->fetch_assoc()['count'];
+$cancellations = $conn->query("SELECT COUNT(id) as count FROM orders WHERE status = 'Cancelled'")->fetch_assoc()['count'];
 ?>
 
-<div class="container mx-auto px-4 pt-4 pb-20">
-
-    <!-- Header Section -->
-    <header class="flex items-center justify-between mb-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">Quick Kart</h1>
-            <p class="text-gray-500">Your one-stop shop</p>
+<!-- Step 4: Display the HTML content for the dashboard with ALL cards. -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Total Users Card -->
+    <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
+            <i class="fas fa-users text-2xl"></i>
         </div>
-        <button id="menu-btn" class="text-2xl text-gray-700 md:hidden">
-            <i class="fas fa-bars"></i>
-        </button>
-    </header>
-
-    <!-- Search Bar -->
-    <div class="relative mb-6">
-        <input type="text" placeholder="Search for products..." class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300">
-        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Total Users</p>
+            <p class="text-2xl font-bold text-gray-800"><?= $total_users ?></p>
+        </div>
     </div>
 
-    <!-- Categories Section -->
-    <section class="mb-8">
-        <h2 class="text-xl font-semibold mb-3 text-gray-700">Categories</h2>
-        <div class="flex overflow-x-auto space-x-4 pb-4 no-scrollbar">
-            <?php if ($categories_result->num_rows > 0): ?>
-                <?php while($cat = $categories_result->fetch_assoc()): ?>
-                    <a href="product.php?cat_id=<?= $cat['id'] ?>" class="flex-shrink-0 text-center">
-                        <div class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden">
-                            <img src="<?= $cat['image'] ? 'uploads/categories/'.$cat['image'] : 'https://via.placeholder.com/80' ?>" alt="<?= htmlspecialchars($cat['name']) ?>" class="object-cover w-full h-full">
-                        </div>
-                        <p class="mt-2 text-sm font-medium text-gray-600"><?= htmlspecialchars($cat['name']) ?></p>
-                    </a>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <p>No categories found.</p>
-            <?php endif; ?>
+    <!-- Total Orders Card -->
+    <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-green-100 text-green-600 p-3 rounded-full">
+            <i class="fas fa-shopping-cart text-2xl"></i>
         </div>
-    </section>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Total Orders</p>
+            <p class="text-2xl font-bold text-gray-800"><?= $total_orders ?></p>
+        </div>
+    </div>
 
-    <!-- Featured Products Section -->
-    <section>
-        <h2 class="text-xl font-semibold mb-3 text-gray-700">Featured Products</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <?php if ($products_result->num_rows > 0): ?>
-                <?php while($prod = $products_result->fetch_assoc()): ?>
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden group">
-                        <a href="product_detail.php?id=<?= $prod['id'] ?>">
-                            <div class="w-full h-32 sm:h-40 bg-gray-200">
-                                <img src="<?= $prod['image'] ? 'uploads/products/'.$prod['image'] : 'https://via.placeholder.com/150' ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="w-full h-full object-cover">
-                            </div>
-                            <div class="p-3">
-                                <h3 class="text-sm font-semibold text-gray-800 truncate"><?= htmlspecialchars($prod['name']) ?></h3>
-                                <p class="text-lg font-bold text-blue-600 mt-1">₹<?= number_format($prod['price']) ?></p>
-                                <button class="w-full mt-2 bg-blue-500 text-white text-xs font-bold py-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">View Details</button>
-                            </div>
-                        </a>
-                    </div>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <p class="col-span-full">No products found.</p>
-            <?php endif; ?>
+    <!-- Total Revenue Card -->
+    <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full">
+            <i class="fas fa-rupee-sign text-2xl"></i>
         </div>
-    </section>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Total Revenue</p>
+            <p class="text-2xl font-bold text-gray-800">₹<?= number_format($total_revenue ?? 0, 2) ?></p>
+        </div>
+    </div>
+
+    <!-- Active Products Card -->
+    <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-purple-100 text-purple-600 p-3 rounded-full">
+            <i class="fas fa-box-open text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Active Products</p>
+            <p class="text-2xl font-bold text-gray-800"><?= $active_products ?></p>
+        </div>
+    </div>
+
+    <!-- Pending Orders Card -->
+     <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-indigo-100 text-indigo-600 p-3 rounded-full">
+            <i class="fas fa-truck-loading text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Pending Orders</p>
+            <p class="text-2xl font-bold text-gray-800"><?= $pending_orders ?></p>
+        </div>
+    </div>
+
+    <!-- Cancellations Card -->
+    <div class="bg-white p-5 rounded-lg shadow-md flex items-center space-x-4">
+        <div class="bg-red-100 text-red-600 p-3 rounded-full">
+            <i class="fas fa-times-circle text-2xl"></i>
+        </div>
+        <div>
+            <p class="text-gray-500 text-sm font-medium">Cancellations</p>
+            <p class="text-2xl font-bold text-gray-800"><?= $cancellations ?></p>
+        </div>
+    </div>
 </div>
 
-<?php include 'common/bottom.php'; ?>
+<!-- Quick Actions Section -->
+<div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-4">
+        <a href="product.php" class="bg-blue-500 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-600"><i class="fas fa-plus mr-2"></i>Add Product</a>
+        <a href="order.php" class="bg-green-500 text-white px-5 py-2 rounded-md font-semibold hover:bg-green-600"><i class="fas fa-eye mr-2"></i>Manage Orders</a>
+        <a href="user.php" class="bg-yellow-500 text-white px-5 py-2 rounded-md font-semibold hover:bg-yellow-600"><i class="fas fa-users-cog mr-2"></i>Manage Users</a>
+    </div>
+</div>
+
+<?php 
+// Step 5: Include the footer file.
+include 'common/bottom.php'; 
+?>
